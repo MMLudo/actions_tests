@@ -1,0 +1,9 @@
+{
+  "name": "package2",
+  "version": "1.0.0",
+  "description": "Test package 2",
+  "main": "index.js",
+  "repository": "https://github.com/MMLudo/actions_tests.git",
+  "author": "MMludo",
+  "license": "MIT"
+}
