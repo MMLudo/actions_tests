@@ -1,0 +1,32 @@
+﻿  
+name: Publish if new versions in package.json
+on:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-node@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          node-version: '10.x'
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" > ~/.npmrc
+          chmod 0600 ~/.npmrc
+          curl \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: bearer ${GITHUB_TOKEN}" \
+            --data '{ "query": "{ user(login: \"MMludo\") { repository(name: \"actions_tests\") { packages(last: 10) { edges { node { name latestVersion {version} } } } } } }" }' \
+            https://api.github.com/graphql
+          re1="\"version\":\"([0-9]\.[0-9]\.[0-9])\".*\"version\""
+          re2="\"version\":\"[0-9]\.[0-9]\.[0-9]\".*\"version\":\"([0-9]\.[0-9]\.[0-9])\""
+          PACKAGE_VERSION1=$(cat $GITHUB_WORKSPACE/package1/package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
+          PACKAGE_VERSION2=$(cat $GITHUB_WORKSPACE/package2/package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
+          if [[ $test =~ $re1 && ${BASH_REMATCH[1]} != $PACKAGE_VERSION1 ]]; then yarn publish $GITHUB_WORKSPACE/package1; fi
+          if [[ $test =~ $re2 && ${BASH_REMATCH[1]} != $PACKAGE_VERSION2 ]]; then yarn publish $GITHUB_WORKSPACE/package2; fi
