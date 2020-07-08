@@ -29,4 +29,5 @@ jobs:
             https://api.github.com/graphql)
           currentVersion=$(echo "$packages" | jq -r .data.user.repository.packages.edges[0].node.latestVersion.version)
           pushedVersion=$(cat $GITHUB_WORKSPACE/package1/package.json | jq -r .version)
+          newerVersion=$($GITHUB_WORKSPACE/package1/node_modules/semver/bin/semver.js $pushedVersion -r ">=$currentVersion")
           if [[ $newerVersion == $pushedVersion ]]; then yarn publish $GITHUB_WORKSPACE/package1; fi
