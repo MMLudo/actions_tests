@@ -12,10 +12,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           node-version: '10.x'
-      - name: Publish
+      - name: Compute publication status
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run : |
           cd $GITHUB_WORKSPACE/package1
           yarn
           yarn add semver
@@ -28,6 +29,20 @@ jobs:
             --data '{ "query": "{ user(login: \"MMLudo\") { repository(name: \"actions_tests\") { packages(names: \"package1\" first:1) { edges { node { name latestVersion {version} } } } } } }" }' \
             https://api.github.com/graphql)
           currentVersion=$(echo "$packages" | jq -r .data.user.repository.packages.edges[0].node.latestVersion.version)
+          echo "Current version currentVersion"
           pushedVersion=$(cat $GITHUB_WORKSPACE/package1/package.json | jq -r .version)
-          newerVersion=$($GITHUB_WORKSPACE/package1/node_modules/semver/bin/semver.js $pushedVersion -r ">=$currentVersion")
-          if [[ $newerVersion == $pushedVersion ]]; then yarn publish $GITHUB_WORKSPACE/package1; fi
+          echo "Pushed version $pushedVersion"
+          export SHOULD_PUBLISH=$($GITHUB_WORKSPACE/package1/node_modules/semver/bin/semver.js $pushedVersion -r ">$currentVersion")
+          echo "::set-env name=SHOULD_PUBLISH::$SHOULD_PUBLISH"
+          echo "::set-env name=pushedVersion::$pushedVersion"
+          echo "Current Version $currentVersion"
+          echo "Pushed Version $pushedVersion"
+          echo "Should publish $SHOULD_PUBLISH"
+      - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd $GITHUB_WORKSPACE/package1
+          echo "Pushed Version $pushedVersion from publish run"
+          echo "Should publish $SHOULD_PUBLISH from publish run"
+        if: env.SHOULD_PUBLISH == env.pushedVersion
