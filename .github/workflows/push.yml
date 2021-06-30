@@ -30,6 +30,7 @@ jobs:
             https://api.github.com/graphql)
           currentVersion=$(echo "$packages" | jq -r .data.user.repository.packages.edges[0].node.latestVersion.version)
           echo "Current version currentVersion"
+          echo "$packages"
           pushedVersion=$(cat $GITHUB_WORKSPACE/package1/package.json | jq -r .version)
           echo "Pushed version $pushedVersion"
           export SHOULD_PUBLISH=$($GITHUB_WORKSPACE/package1/node_modules/semver/bin/semver.js $pushedVersion -r ">$currentVersion")
